@@ -248,25 +248,25 @@ def mainGame():
             if len(sohailBullets) < 2:
                 sohailBullets.append(bullet)
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
+    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
         x -= vel
         if (x <= 0):
             x = 0
         if (x >= 1155):
             x = 1155
-    if keys[pygame.K_RIGHT]:
+    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
         x += vel
         if (x <= 0):
             x = 0
         if (x >= 1155):
             x = 1155
-    if keys[pygame.K_UP]:
+    if keys[pygame.K_UP] or keys[pygame.K_w]:
         y -= vel
         if (y <= 0):
             y = 0
         if (y >= 620):
             y = 620
-    if keys[pygame.K_DOWN]:
+    if keys[pygame.K_DOWN] or keys[pygame.K_s]:
         y += vel
         if (y <= 0):
             y = 0
