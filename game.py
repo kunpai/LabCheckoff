@@ -79,7 +79,8 @@ class Gary:
         self.x = x
         self.y = y
         self.i = random.randint(0, 50)
-        self.health = 100
+        self.health = 200
+        self.gary = small
 
     def shoot(self):
         norm = math.sqrt((self.x-x)**2 + (self.y-y)**2)
@@ -97,9 +98,11 @@ class Gary:
         # move gary in the direction of sohail
         if self.x < x - 110:
             self.x = self.x + baddyVel
+            self.gary = pygame.transform.flip(small, True, False)
 
         elif self.x > x + 110:
             self.x = self.x - baddyVel
+            self.gary = small
 
         if self.y < y - 110:
             self.y = self.y + baddyVel
@@ -108,12 +111,13 @@ class Gary:
             self.y = self.y - baddyVel
 
     def draw(self):
-        win.blit(small, (self.x, self.y))
+
+        win.blit(self.gary, (self.x, self.y))
         # display health bar under gary
         pygame.draw.rect(win, (255, 0, 0),
                          (self.x, self.y+small.get_height(), small.get_width(), 10))
         pygame.draw.rect(win, (0, 255, 0), (self.x, self.y +
-                         small.get_height(), small.get_width()*(self.health/100), 10))
+                         small.get_height(), small.get_width()*(self.health/200), 10))
 
 
 class Heart:
@@ -126,10 +130,58 @@ class Heart:
 
     def update(self):
         # chek collision with sohail
+        global x, y
         if checkCollision(self.x, self.y, heart.get_size(), x, y, smaller.get_size()):
             global health
             health += 10
             hearts.remove(self)
+
+
+pow = pygame.image.load('pow.png').convert_alpha()
+pow = pygame.transform.scale(pow, (40, 40))
+
+
+class Pow:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def draw(self):
+        win.blit(pow, (self.x, self.y))
+
+    def update(self):
+        global x, y
+        # chek collision with sohail
+        if checkCollision(self.x, self.y, pow.get_size(), x, y, smaller.get_size()):
+            garys.clear()
+            hearts.remove(self)
+
+
+gun = pygame.image.load('gun.png').convert_alpha()
+gun = pygame.transform.scale(gun, (gun.get_width()/8, gun.get_height()/8))
+
+
+class Bandook:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def draw(self):
+        win.blit(gun, (self.x, self.y))
+
+    def update(self):
+        global x, y
+        # chek collision with sohail
+        if checkCollision(self.x, self.y, gun.get_size(), x, y, smaller.get_size()):
+            for i in range(0, 360, 10):
+                bullet = Bullet(x+100/2, y+125/2,
+                                (math.cos(math.radians(i))*20, math.sin(math.radians(i))*20), "sohail")
+                sohailBullets.append(bullet)
+            hearts.remove(self)
+
+
+pew = pygame.image.load('bullet.png').convert_alpha()
+pew = pygame.transform.scale(pew, (pew.get_width()/8, pew.get_height()/8))
 
 
 class Bullet:
@@ -138,9 +190,14 @@ class Bullet:
         self.x = x
         self.y = y
         self.vel = vel
+        # set direction of bullet to velocity
+        self.pew = pygame.transform.rotate(
+            pew, 180-math.degrees(math.atan2(self.vel[1], self.vel[0])))
 
     def draw(self):
-        pygame.draw.rect(win, (255, 0, 0), (self.x, self.y, 10, 10))
+        # draw pew with angle in direction of velocity
+        win.blit(self.pew, (self.x, self.y))
+        # pygame.draw.rect(win, (255, 0, 0), (self.x, self.y, 10, 10))
 
     def update(self):
         global x, y, baddyX, baddyY
@@ -161,7 +218,6 @@ class Bullet:
                     sohailBullets.remove(self)
                     gary.health -= 10
                     break
-                    print("collision")
         if checkCollision(self.x, self.y, (10, 10), x, y, (smaller.get_width(), smaller.get_height())):
             # delete bullet
             if(self.owner == "baddy"):
@@ -208,16 +264,32 @@ run = True
 counter = 0
 
 
+def generatePowerups():
+    if(len(hearts) <= 7):
+        if(random.randint(0, 100) <= 2):
+            hearts.append(Heart(random.randint(0, width),
+                                random.randint(0, height)))
+        if(random.randint(0, 200) <= 1):
+            hearts.append(Pow(random.randint(0, width),
+                              random.randint(0, height)))
+
+        if(random.randint(0, 100) <= 5):
+            hearts.append(Bandook(random.randint(0, width),
+                                  random.randint(0, height)))
+
+
+reloadSpeed = 0
+
+
 def mainGame():
     global page, run
     global ctr, boardCoor, baddyX, baddyY, vel, baddyVel, x, y, width, height, win
-    global counter
+    global counter, reloadSpeed
     counter += 1
     if(counter == 200):
-        counter = 0
-        if(len(garys) < 5):
-            garys.append(Gary(random.randint(0, width),
-                         random.randint(0, height)))
+        counter = random.randint(0, 200)
+        garys.append(Gary(random.randint(0, width),
+                          random.randint(0, height)))
     clock.tick(60)
     mouse = pygame.mouse.get_pos()
     pygame.time.delay(50)
@@ -225,21 +297,21 @@ def mainGame():
         boardCoor = randomBox()
         ctr = ctr + 1
         print(ctr)
-
+    reloadSpeed -= 1
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             # 5% chance of generating a heart
-            if(random.randint(0, 100) <= 5):
-                if(len(hearts) < 5):
-                    hearts.append(Heart(random.randint(0, width),
-                                        random.randint(0, height)))
-            norm = math.sqrt((mouse[0]-x)**2 + (mouse[1]-y)**2)
-            vector = (-(x-mouse[0])/norm*20, -(y-mouse[1])/norm*20)
-            bullet = Bullet(x+100/2, y+125/2, vector, "sohail")
-            if len(sohailBullets) < 2:
+            generatePowerups()
+            if(reloadSpeed <= 0):
+                reloadSpeed = 4
+                norm = math.sqrt((mouse[0]-x)**2 + (mouse[1]-y)**2)
+                vector = (-(x-mouse[0])/norm*20, -(y-mouse[1])/norm*20)
+                bullet = Bullet(x+100/2, y+125/2, vector, "sohail")
+                # if len(sohailBullets) < 2:
                 sohailBullets.append(bullet)
+
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT] or keys[pygame.K_a]:
         x -= vel
@@ -282,7 +354,8 @@ def mainGame():
     for bullet in sohailBullets:
         bullet.update()
         bullet.draw()
-    for heart in hearts:
+    h = hearts.copy()
+    for heart in h:
         heart.update()
         heart.draw()
 
