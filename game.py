@@ -1,3 +1,4 @@
+from turtle import screensize
 import pygame
 import random
 import math
@@ -54,16 +55,6 @@ def score():
     win.blit(text, (1280-text.get_width(), 0))
 
 
-def draw_game():
-    win.fill((0, 0, 0))
-    win.blit(smaller, (x, y))
-    win.blit(board, boardCoor)
-    score()
-    # draw a floating health bar
-    #win.blit(small, (1280-baddyX, 720-baddyY))
-    #pygame.draw.rect(win, (255, 0, 0), (baddyX, baddyY, 40, 40))
-
-
 def randomBox():
     return (random.randint(0, 1000), random.randint(0, 600))
 
@@ -90,29 +81,31 @@ class Gary:
         self.i = random.randint(0, 50)
         self.health = 100
 
+    def shoot(self):
+        norm = math.sqrt((self.x-x)**2 + (self.y-y)**2)
+        vector = ((x-self.x)/norm*10, (y-self.y)/norm*10)
+        bullet = Bullet(self.x+100/2, self.y+100/2, vector, "baddy")
+        bullets.append(bullet)
+
     def update(self):
         if(self.health <= 0):
             garys.remove(self)
         self.i += 1
         if(self.i == 100):
             self.i = random.randint(0, 50)
-            norm = math.sqrt((self.x-x)**2 + (self.y-y)**2)
-            vector = ((x-self.x)/norm*10, (y-self.y)/norm*10)
-            bullet = Bullet(self.x+100/2, self.y+100/2, vector, "baddy")
-            bullets.append(bullet)
+            self.shoot()
+        # move gary in the direction of sohail
         if self.x < x - 110:
             self.x = self.x + baddyVel
 
         elif self.x > x + 110:
             self.x = self.x - baddyVel
 
-        elif self.y < y - 110:
+        if self.y < y - 110:
             self.y = self.y + baddyVel
 
         elif self.y > y + 110:
             self.y = self.y - baddyVel
-        else:
-            pass
 
     def draw(self):
         win.blit(small, (self.x, self.y))
@@ -272,8 +265,14 @@ def mainGame():
             y = 0
         if (y >= 620):
             y = 620
+    win.set_clip(None)
+    win.fill(0)
+    areaRadius = 400
+    areaTopleft = (x+100/2-areaRadius, y+125/2-areaRadius)
+    clipRect = pygame.Rect(areaTopleft, (areaRadius*2, areaRadius*2))
+    win.set_clip(clipRect)
+    win.blit(board, boardCoor)
 
-    draw_game()
     for gary in garys:
         gary.update()
         gary.draw()
@@ -286,6 +285,17 @@ def mainGame():
     for heart in hearts:
         heart.update()
         heart.draw()
+
+    screensize = (areaRadius*4, areaRadius*4)
+    circularArea = pygame.Surface(
+        screensize, pygame.SRCALPHA)
+    circularArea.fill((0, 0, 0, 255))
+    pygame.draw.circle(circularArea, (255, 0, 0, 25),
+                       (areaRadius, areaRadius), areaRadius)
+    win.blit(circularArea, areaTopleft)
+    win.set_clip(None)
+    win.blit(smaller, (x, y))
+    score()
     pygame.display.update()
 
 
