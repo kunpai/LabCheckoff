@@ -6,19 +6,19 @@ pygame.init()
 
 win = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Board Collection")
-my_image = pygame.image.load('ghiasi.png').convert_alpha()
+my_image = pygame.image.load('game/assets/ghiasi.png').convert_alpha()
 smaller = pygame.transform.scale(
     my_image, (my_image.get_width()/4, my_image.get_height()/4))
-board = pygame.image.load('CC3200.png').convert_alpha()
+board = pygame.image.load('game/assets/CC3200.png').convert_alpha()
 # scale the width to 50%
 board = pygame.transform.scale(
     board, (board.get_width()/4, board.get_height()/4))
-gary = pygame.image.load('gary.png').convert_alpha()
+gary = pygame.image.load('game/assets/gary.png').convert_alpha()
 small = pygame.transform.scale(gary, (gary.get_width()/4, gary.get_height()/4))
-heart = pygame.image.load('heart.png').convert_alpha()
+heart = pygame.image.load('game/assets/heart.png').convert_alpha()
 heart = pygame.transform.scale(heart, (40, 40))
 
-title = pygame.image.load('title.png').convert_alpha()
+title = pygame.image.load('game/assets/title.png').convert_alpha()
 # defining a font
 smallfont = pygame.font.SysFont('Corbel', 35)
 text = smallfont.render('quit', True, (255, 0, 0))
@@ -88,9 +88,14 @@ class Gary:
         bullet = Bullet(self.x+100/2, self.y+100/2, vector, "baddy")
         bullets.append(bullet)
 
+    def die(self):
+        garys.remove(self)
+        global deaths
+        deaths.append(Death(self.x, self.y))
+
     def update(self):
         if(self.health <= 0):
-            garys.remove(self)
+            self.die()
         self.i += 1
         if(self.i == 100):
             self.i = random.randint(0, 50)
@@ -120,6 +125,30 @@ class Gary:
                          small.get_height(), small.get_width()*(self.health/200), 10))
 
 
+think = pygame.image.load('game/assets/garythink.png').convert_alpha()
+think = pygame.transform.scale(
+    think, (think.get_width()/4, think.get_height()/4))
+
+deaths = []
+
+
+class Death:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.i = 10
+        self.death = think.copy()
+
+    def draw(self):
+        self.i -= 1
+        # change opacity of death image
+        self.death.fill((255, 255, 255, 255*self.i/10),
+                        None, pygame.BLEND_RGBA_MULT)
+        win.blit(self.death, (self.x, self.y))
+        if(self.i <= 0):
+            deaths.remove(self)
+
+
 class Heart:
     def __init__(self, x, y):
         self.x = x
@@ -137,7 +166,7 @@ class Heart:
             hearts.remove(self)
 
 
-pow = pygame.image.load('pow.png').convert_alpha()
+pow = pygame.image.load('game/assets/pow.png').convert_alpha()
 pow = pygame.transform.scale(pow, (40, 40))
 
 
@@ -153,11 +182,12 @@ class Pow:
         global x, y
         # chek collision with sohail
         if checkCollision(self.x, self.y, pow.get_size(), x, y, smaller.get_size()):
-            garys.clear()
+            for gary in garys:
+                gary.die()
             hearts.remove(self)
 
 
-gun = pygame.image.load('gun.png').convert_alpha()
+gun = pygame.image.load('game/assets/gun.png').convert_alpha()
 gun = pygame.transform.scale(gun, (gun.get_width()/8, gun.get_height()/8))
 
 
@@ -180,7 +210,7 @@ class Bandook:
             hearts.remove(self)
 
 
-pew = pygame.image.load('bullet.png').convert_alpha()
+pew = pygame.image.load('game/assets/bullet.png').convert_alpha()
 pew = pygame.transform.scale(pew, (pew.get_width()/8, pew.get_height()/8))
 
 
@@ -287,7 +317,7 @@ def mainGame():
     global counter, reloadSpeed
     counter += 1
     if(counter == 200):
-        counter = random.randint(0, 200)
+        counter = random.randint(0, 200*len(garys)/10)
         garys.append(Gary(random.randint(0, width),
                           random.randint(0, height)))
     clock.tick(60)
@@ -348,16 +378,21 @@ def mainGame():
     for gary in garys:
         gary.update()
         gary.draw()
-    for bullet in bullets:
+    b = bullets.copy()
+    for bullet in b:
         bullet.update()
         bullet.draw()
-    for bullet in sohailBullets:
+    b = sohailBullets.copy()
+    for bullet in b:
         bullet.update()
         bullet.draw()
     h = hearts.copy()
     for heart in h:
         heart.update()
         heart.draw()
+
+    for death in deaths:
+        death.draw()
 
     screensize = (areaRadius*4, areaRadius*4)
     circularArea = pygame.Surface(
